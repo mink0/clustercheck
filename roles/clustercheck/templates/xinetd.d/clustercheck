@@ -1,0 +1,20 @@
+# This is the configuration for the clustercheck service
+
+service clustercheck
+{
+	# Quick on/off of the service
+	disable = no
+
+	# External services not listed in /etc/services must fill out the next one
+	port = {{ clustercheck_port }}
+
+	# External xinetd service options
+	server = {{ clustercheck_path }}
+	user = nobody
+	type = UNLISTED
+	wait = no
+
+	# Networking options
+	flags = REUSE
+	socket_type = stream
+}

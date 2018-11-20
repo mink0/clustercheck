@@ -1,0 +1,44 @@
+# setup clustercheck xinetd service
+---
+
+- name: install xinetd
+  yum:
+    name: xinetd
+
+- name: install clusterccheck script
+  copy:
+    src: ../../../clustercheck
+    dest: "{{ clustercheck_path }}"
+    mode: 0755
+
+- name: install xinetd config
+  template:
+    src: xinetd.d/clustercheck
+    dest: /etc/xinetd.d/clustercheck
+  notify: reload xinetd
+
+- name: open firewall port {{ clustercheck_port }}
+  firewalld:
+    port: "{{ clustercheck_port }}/tcp"
+    state: enabled
+    permanent: yes
+    immediate: yes
+
+- name: flush handlers to apply restart/reload immediately
+  meta: flush_handlers
+
+- name: ensure xinetd is enabled and started
+  systemd:
+    enabled: yes
+    daemon_reload: yes
+    state: started
+    name: xinetd
+
+- name: check clustercheck xinetd service works
+  uri:
+    url: http://127.0.0.1:{{ clustercheck_port }}
+  retries: 5
+  register: clustercheck_res
+  until: clustercheck_res.status == 200
+  changed_when: false
+  tags: test

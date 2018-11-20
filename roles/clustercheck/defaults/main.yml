@@ -1,0 +1,2 @@
+clustercheck_port: 9200
+clustercheck_path: /usr/bin/clustercheck

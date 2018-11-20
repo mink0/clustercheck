@@ -1,0 +1,4 @@
+- name: reload xinetd
+  systemd:
+    name: xinetd
+    state: reloaded

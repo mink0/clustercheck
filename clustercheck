@@ -16,7 +16,7 @@ node_health_check() {
   # ss -ltn state listening | grep 3000 &>$LOG || res_err 'Socket 3000 is not listening'
   #
   # out=$(mysqladmin --connect-timeout=1 ping 2>$LOG)
-  # [[ "$out" == 'mysqld is alive' ]] || res_err "Mysql server don't respond"
+  # [[ "$out" == 'mysqld is alive' ]] || res_err "Mysql ping failed: $out"
 
   res_ok
 }

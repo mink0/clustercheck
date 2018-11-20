@@ -13,11 +13,10 @@ node_health_check() {
   # Examples:
   # ps --no-headers -C nginx &>$LOG || res_err 'No nginx process is running'
   #
-  # out=$(/usr/sbin/ss -ltn 2>$LOG | grep 3000 | awk '{print $1}')
-  # check_equal "$out" "LISTEN" || res_err 'Socket 3000 is not listening'
+  # ss -ltn state listening | grep 3000 &>$LOG || res_err 'Socket 3000 is not listening'
   #
   # out=$(mysqladmin --connect-timeout=1 ping 2>$LOG)
-  # check_equal "$out" 'mysqld is alive' || res_err "Mysql server don't respond"
+  # [[ "$out" == 'mysqld is alive' ]] || res_err "Mysql server don't respond"
 
   res_ok
 }
@@ -52,21 +51,10 @@ res_ok() {
   exit
 }
 
-# check_contain fails if $2 not in $1
-check_contain() {
-  [[ "$1" != *"$2"* ]] && return 1
-}
-
-# check_equal fails if $1 != $2
-check_equal() {
-  [[ "$1" != "$2" ]] && return 1
-}
-
 # main ####
 
-# usage
 if [[ "$1" == '-h' || "$1" == '--help' ]]; then
-  echo "Usage: $0 <enable|disable>"
+  echo "Usage: $0 [enable|disable]"
   exit
 elif [[ "$1" == 'disable' || "$1" == '--disable' ]]; then
   touch "$DISABLE_FILE"
@@ -74,7 +62,6 @@ elif [[ "$1" == 'enable' || "$1" == '--enable' ]]; then
   rm -f "$DISABLE_FILE"
 fi
 
-# check if node is disabled
 if [ -e "$DISABLE_FILE" ]; then
   res_err "Cluster node is manually disabled by $(stat -c '%U' $DISABLE_FILE)"
 fi

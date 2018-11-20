@@ -1,0 +1,82 @@
+#!/usr/bin/env bash
+
+#
+# Health checks for cluster monitoring using HTTP messages
+#
+
+LOG="${LOG:-/dev/null}"
+HTTP_WAIT=${HTTP_WAIT:-0} # emulate http delay if needed
+DISABLE_FILE=${DISABLE_FILE:-/var/tmp/node.disable}
+
+# CUSTOM HEALTH CHECKS ARE ADDED HERE
+node_health_check() {
+  # Examples:
+  # ps --no-headers -C nginx &>$LOG || res_err 'No nginx process is running'
+  #
+  # out=$(/usr/sbin/ss -ltn 2>$LOG | grep 3000 | awk '{print $1}')
+  # check_equal "$out" "LISTEN" || res_err 'Socket 3000 is not listening'
+  #
+  # out=$(mysqladmin --connect-timeout=1 ping 2>$LOG)
+  # check_equal "$out" 'mysqld is alive' || res_err "Mysql server don't respond"
+
+  res_ok
+}
+
+http_msg() {
+  local msg="$1"
+
+  echo -en 'Content-Type: text/plain\r\n'
+  echo -en 'Connection: close\r\n'
+  echo -en "Content-Length: ${#msg}\r\n"
+  echo -en '\r\n' # necessary content delimeter
+  echo -en "$msg"
+}
+
+res_err() {
+  local msg="ERROR: $1"
+
+  echo -en 'HTTP/1.1 503 Service Unavailable\r\n'
+  http_msg "$msg"
+
+  sleep $HTTP_WAIT
+  exit 1
+}
+
+res_ok() {
+  local msg='OK'
+
+  echo -en 'HTTP/1.1 200 OK\r\n'
+  http_msg "$msg"
+
+  sleep $HTTP_WAIT
+  exit
+}
+
+# check_contain fails if $2 not in $1
+check_contain() {
+  [[ "$1" != *"$2"* ]] && return 1
+}
+
+# check_equal fails if $1 != $2
+check_equal() {
+  [[ "$1" != "$2" ]] && return 1
+}
+
+# main ####
+
+# usage
+if [[ "$1" == '-h' || "$1" == '--help' ]]; then
+  echo "Usage: $0 <enable|disable>"
+  exit
+elif [[ "$1" == 'disable' || "$1" == '--disable' ]]; then
+  touch "$DISABLE_FILE"
+elif [[ "$1" == 'enable' || "$1" == '--enable' ]]; then
+  rm -f "$DISABLE_FILE"
+fi
+
+# check if node is disabled
+if [ -e "$DISABLE_FILE" ]; then
+  res_err "Cluster node is manually disabled by $(stat -c '%U' $DISABLE_FILE)"
+fi
+
+node_health_check

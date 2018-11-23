@@ -29,6 +29,9 @@ http_msg() {
   echo -en "Content-Length: ${#msg}\r\n"
   echo -en '\r\n' # necessary content delimeter
   echo -en "$msg"
+
+  # wait for reply ack from client
+  sleep $HTTP_WAIT
 }
 
 res_err() {
@@ -37,8 +40,6 @@ res_err() {
   echo -en 'HTTP/1.1 503 Service Unavailable\r\n'
   http_msg "$msg"
 
-  # must wait for ack from client
-  sleep $HTTP_WAIT
   exit 1
 }
 
@@ -48,7 +49,6 @@ res_ok() {
   echo -en 'HTTP/1.1 200 OK\r\n'
   http_msg "$msg"
 
-  sleep $HTTP_WAIT
   exit
 }
 

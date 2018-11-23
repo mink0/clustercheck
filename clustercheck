@@ -5,7 +5,7 @@
 #
 
 LOG="${LOG:-/dev/null}"
-HTTP_WAIT=${HTTP_WAIT:-0} # emulate http delay if needed
+HTTP_WAIT=${HTTP_WAIT:-0.1} # wait before closing tcp session
 DISABLE_FILE=${DISABLE_FILE:-/var/tmp/node.disable}
 
 # CUSTOM HEALTH CHECKS ARE ADDED HERE
@@ -37,6 +37,7 @@ res_err() {
   echo -en 'HTTP/1.1 503 Service Unavailable\r\n'
   http_msg "$msg"
 
+  # must wait for ack from client
   sleep $HTTP_WAIT
   exit 1
 }
